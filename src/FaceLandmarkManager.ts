@@ -61,8 +61,17 @@ export class FaceLandmarkManager extends EventTarget {
     }
   }
 
+  dispose(): void {
+    this.stop();
+    this.model = null;
+    this.cameraManager = null;
+    this.faces = [];
+  }
+
   private async loop() {
-    if (!this.isRunning || !this.cameraManager || !this.model) return;
+    if (!this.isRunning || !this.cameraManager) return; // model check inside try/catch or assume init? 
+    // Actually best to check model exists
+    if (!this.model) return;
 
     const video = this.cameraManager.video;
     
@@ -75,6 +84,9 @@ export class FaceLandmarkManager extends EventTarget {
             this.dispatchEvent(new CustomEvent('face-detected', { detail: { faces } }));
         } catch (err) {
             console.error('Face detection error:', err);
+            this.dispatchEvent(new CustomEvent('error', { detail: { error: err } }));
+            this.stop(); // Stop on critical error? Maybe not, could be transient. 
+            // Let's just log and emit.
         }
     }
 
