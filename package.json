@@ -6,7 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rollup -c",
-    "test:build": "rollup -c rollup.test.config.js"
+    "test:build": "rollup -c rollup.test.config.js",
+    "start": "npx serve test",
+    "dev": "rollup -c -w"
   },
   "repository": {
     "type": "git",
@@ -32,6 +34,7 @@
     "@tensorflow/tfjs-backend-webgl": "^4.22.0",
     "@tensorflow/tfjs-converter": "^4.22.0",
     "@tensorflow/tfjs-core": "^4.22.0",
-    "camera-manager": "github:yiwenl/camera-manager"
+    "camera-manager": "github:yiwenl/camera-manager",
+    "gl-matrix": "^3.4.4"
   }
 }
