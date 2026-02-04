@@ -56,16 +56,35 @@ npm install
 npm run build
 ```
 
-## Development
+## Demos
 
-To run the demo page locally:
+This project includes two demos to verify functionality and visualize results.
+
+### 1. Basic Demo
+A simple page showing the camera feed and real-time statistics (face count, vertex count).
+- **File**: `test/demo.html`
+- **Logic**: `test/demo.js`
+
+### 2. 3D WebGL Demo
+A 3D visualization using `gl-matrix` and WebGL to render the detected face mesh as a point cloud.
+- **File**: `test/demo3d.html`
+- **Logic**: `test/demo3d.js`
+- **Features**: Real-time 3D rendering, aspect-ratio corrected visualization.
+
+### Running the Demos
+To run the demos locally:
 
 ```bash
 npm install
 npm run build
 npm run test:build
-# Serve the test/ directory with your preferred server, e.g., 'serve test'
+npm start
 ```
+
+Then open:
+- [http://localhost:3000/demo.html](http://localhost:3000/demo.html) (Basic)
+- [http://localhost:3000/demo3d.html](http://localhost:3000/demo3d.html) (3D)
+
 
 ## License
 
