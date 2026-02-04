@@ -8,6 +8,7 @@ A lightweight Face Mesh detection module using TensorFlow.js and MediaPipe, capa
 - **3D Landmarks**: specialized in providing the array of 3D vertices for the detected face.
 - **Camera Management**: Built-in camera access handling via `camera-manager`.
 - **Easy Integration**: Modular design with TypeScript support.
+- **Mirroring**: Automatic horizontal mirroring for natural interaction.
 
 ## Installation
 
@@ -20,23 +21,29 @@ npm install visage
 ## Usage
 
 ```typescript
-import { CameraManager, FaceLandmarkManager } from 'visage';
+import { FaceLandmarkManager } from 'visage';
 
-// 1. Initialize Camera
-const cameraManager = new CameraManager();
-await cameraManager.start();
-document.body.appendChild(cameraManager.video);
-
-// 2. Initialize Face Mesh
+// 1. Initialize Manager (Handling camera automatically)
 const faceManager = new FaceLandmarkManager({
     maxFaces: 1,
-    refineLandmarks: true // Improves eye and lip landmarks
+    refineLandmarks: true, // Improves eye and lip landmarks
+    mirror: true // Default: true. Flips coordinates for mirrored view.
 });
-await faceManager.init(cameraManager);
+
+// Init will create and start the camera internally if not provided
+await faceManager.init();
+
+// 2. Access Camera (Optional)
+// If you need to attach the video element to the DOM
+const video = faceManager.getVideo();
+if (video) {
+    document.body.appendChild(video);
+}
 
 // 3. Listen for Results
 faceManager.addEventListener('face-detected', (e) => {
     // Get 3D vertices (x, y, z)
+    // If mirror is true, x coordinates are flipped
     const vertices = faceManager.getVertices();
     const faceCount = faceManager.getFaceCount();
 
@@ -45,6 +52,19 @@ faceManager.addEventListener('face-detected', (e) => {
         console.log('First vertex:', vertices[0]);
     }
 });
+```
+
+### Manual Camera Management
+You can still provide your own `CameraManager` instance if preferred:
+
+```typescript
+import { CameraManager, FaceLandmarkManager } from 'visage';
+
+const cameraManager = new CameraManager();
+await cameraManager.start();
+
+const faceManager = new FaceLandmarkManager();
+await faceManager.init(cameraManager);
 ```
 
 ## Build
@@ -58,21 +78,18 @@ npm run build
 
 ## Demos
 
-This project includes two demos to verify functionality and visualize results.
+The project includes a 3D WebGL demo to verify functionality.
 
-### 1. Basic Demo
-A simple page showing the camera feed and real-time statistics (face count, vertex count).
-- **File**: `test/demo.html`
-- **Logic**: `test/demo.js`
-
-### 2. 3D WebGL Demo
+### 3D WebGL Demo
 A 3D visualization using `gl-matrix` and WebGL to render the detected face mesh as a point cloud.
-- **File**: `test/demo3d.html`
-- **Logic**: `test/demo3d.js`
-- **Features**: Real-time 3D rendering, aspect-ratio corrected visualization.
+- **Files**: `test/index.html`, `test/demo3d.js`
+- **Features**: 
+  - Real-time 3D rendering.
+  - Semi-transparent camera feed overlay.
+  - Mirrored visualization.
 
-### Running the Demos
-To run the demos locally:
+### Running the Demo
+To run the demo locally:
 
 ```bash
 npm install
@@ -82,9 +99,7 @@ npm start
 ```
 
 Then open:
-- [http://localhost:3000/demo.html](http://localhost:3000/demo.html) (Basic)
-- [http://localhost:3000/demo3d.html](http://localhost:3000/demo3d.html) (3D)
-
+- [http://localhost:3000](http://localhost:3000)
 
 ## License
 

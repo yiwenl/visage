@@ -63048,10 +63048,10 @@ return a / b;`;
 	        return this.faces.length;
 	    }
 	    /**
-	     * Returns the CameraManager instance
+	     * Returns the video element
 	     */
-	    getCameraManager() {
-	        return this.cameraManager;
+	    getVideo() {
+	        return this.cameraManager?.video || null;
 	    }
 	    get mirror() {
 	        return this.options.mirror ?? true;
@@ -63371,13 +63371,13 @@ return a / b;`;
 	    const faceManager = new FaceLandmarkManager({ maxFaces: 1 });
 	    await faceManager.init();
 
-	    const cameraManager = faceManager.getCameraManager();
-	    if (cameraManager) {
-	        cameraManager.video.id = 'lens-video';
+	    const video = faceManager.getVideo();
+	    if (video) {
+	        video.id = 'lens-video';
 	        if (faceManager.mirror) {
-	            cameraManager.video.style.transform = 'scaleX(-1)';
+	            video.style.transform = 'scaleX(-1)';
 	        }
-	        document.body.appendChild(cameraManager.video); // Append but hidden via CSS
+	        document.body.appendChild(video); // Append but hidden via CSS
 	    }
 
 	    // Matrices
@@ -63389,10 +63389,10 @@ return a / b;`;
 	    lookAt(viewMatrix, [0, 0, 2], [0, 0, 0], [0, 1, 0]);
 
 	    function updateMatrices() {
-	        if (!cameraManager) return;
+	        if (!video) return;
 	        const fov = 60 * Math.PI / 180;
 	        // const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-	        const aspect = cameraManager.video.videoWidth / cameraManager.video.videoHeight;
+	        const aspect = video.videoWidth / video.videoHeight;
 	        const zNear = 0.1;
 	        const zFar = 100.0;
 	        perspective(projectionMatrix, fov, aspect, zNear, zFar);
@@ -63432,15 +63432,15 @@ return a / b;`;
 	        document.getElementById('face-count').innerText = faceManager.getFaceCount();
 	        document.getElementById('vertex-count').innerText = vertices.length;
 
-	        if (vertices.length > 0 && cameraManager) {
+	        if (vertices.length > 0 && video) {
 	            // Flatten vertices
 	            if (verticesData.length !== vertices.length * 3) {
 	                verticesData = new Float32Array(vertices.length * 3);
 	            }
 	            // Center the face approx. detected coordinates are in pixels (e.g. 0-640, 0-480)
 	            // We want to center them around 0.
-	            const cx = cameraManager.video.videoWidth / 2;
-	            const cy = cameraManager.video.videoHeight / 2;
+	            const cx = video.videoWidth / 2;
+	            const cy = video.videoHeight / 2;
 
 	            for (let i = 0; i < vertices.length; i++) {
 	                // Flip Y because WebGL Y is up, pixel Y is down

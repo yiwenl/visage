@@ -137,10 +137,10 @@ export class FaceLandmarkManager extends EventTarget {
   }
 
   /**
-   * Returns the CameraManager instance
+   * Returns the video element
    */
-  getCameraManager(): CameraManager | null {
-    return this.cameraManager;
+  getVideo(): HTMLVideoElement | null {
+    return this.cameraManager?.video || null;
   }
 
   get mirror(): boolean {
