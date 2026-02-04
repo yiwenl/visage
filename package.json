@@ -1,0 +1,37 @@
+{
+  "name": "visage",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup -c",
+    "test:build": "rollup -c rollup.test.config.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://yiwenl@github.com/yiwenl/visage.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/yiwenl/visage/issues"
+  },
+  "homepage": "https://github.com/yiwenl/visage#readme",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "rollup": "^4.57.1",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@tensorflow-models/face-landmarks-detection": "^1.0.6",
+    "@tensorflow/tfjs-backend-webgl": "^4.22.0",
+    "@tensorflow/tfjs-converter": "^4.22.0",
+    "@tensorflow/tfjs-core": "^4.22.0",
+    "camera-manager": "github:yiwenl/camera-manager"
+  }
+}
