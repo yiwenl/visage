@@ -2,10 +2,23 @@
   "name": "visage",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/visage.umd.js",
+  "module": "dist/visage.esm.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/visage.esm.js",
+      "require": "./dist/visage.umd.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rollup -c",
+    "prepare": "npm run build",
     "test:build": "rollup -c rollup.test.config.js",
     "start": "npx serve test",
     "dev": "rollup -c -w"
