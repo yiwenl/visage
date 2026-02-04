@@ -1,4 +1,4 @@
-import { FaceLandmarkManager } from '../dist/visage.esm.js';
+import { FaceLandmarkManager } from '../src/index.ts';
 import { mat4 } from 'gl-matrix';
 
 const vertexShaderSource = `
