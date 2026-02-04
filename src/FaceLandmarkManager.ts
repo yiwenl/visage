@@ -6,6 +6,7 @@ import { CameraManager } from 'camera-manager';
 export interface FaceLandmarkManagerOptions {
   maxFaces?: number;
   refineLandmarks?: boolean;
+  mirror?: boolean;
 }
 
 export class FaceLandmarkManager extends EventTarget {
@@ -15,6 +16,8 @@ export class FaceLandmarkManager extends EventTarget {
   private isRunning: boolean = false;
   private options: FaceLandmarkManagerOptions;
   
+  private ownsCameraManager: boolean = false;
+  
   // Store latest results
   private faces: faceLandmarksDetection.Face[] = [];
 
@@ -22,12 +25,20 @@ export class FaceLandmarkManager extends EventTarget {
     super();
     this.options = {
       maxFaces: options.maxFaces || 1,
-      refineLandmarks: options.refineLandmarks || false
+      refineLandmarks: options.refineLandmarks || false,
+      mirror: options.mirror ?? true
     };
   }
 
-  async init(cameraManager: CameraManager) {
-    this.cameraManager = cameraManager;
+  async init(cameraManager?: CameraManager) {
+    if (cameraManager) {
+      this.cameraManager = cameraManager;
+      this.ownsCameraManager = false;
+    } else {
+      this.cameraManager = new CameraManager();
+      this.ownsCameraManager = true;
+      await this.cameraManager.start();
+    }
 
     // Load method
     const model = faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh;
@@ -64,6 +75,11 @@ export class FaceLandmarkManager extends EventTarget {
   dispose(): void {
     this.stop();
     this.model = null;
+    if (this.ownsCameraManager && this.cameraManager) {
+      this.cameraManager.stop();
+      // CameraManager might not have dispose, check its type definition if needed, but stop is standard. 
+      // If it has dispose, call it. Based on previous file reads, it has stop().
+    }
     this.cameraManager = null;
     this.faces = [];
   }
@@ -99,9 +115,16 @@ export class FaceLandmarkManager extends EventTarget {
    */
   getVertices(): number[][] {
     if (this.faces.length > 0 && this.faces[0].keypoints) {
+      const width = this.cameraManager?.video.videoWidth || 0;
       // keypoints is Array<{x, y, z, name?}>
       // We want to return just arrays of [x, y, z] to match "array of vertices positions in 3D"
-      return this.faces[0].keypoints.map(kp => [kp.x, kp.y, kp.z || 0]);
+      return this.faces[0].keypoints.map(kp => {
+        let x = kp.x;
+        if (this.options.mirror && width > 0) {
+          x = width - x;
+        }
+        return [x, kp.y, kp.z || 0];
+      });
     }
     return [];
   }
@@ -111,5 +134,16 @@ export class FaceLandmarkManager extends EventTarget {
    */
   getFaceCount(): number {
     return this.faces.length;
+  }
+
+  /**
+   * Returns the CameraManager instance
+   */
+  getCameraManager(): CameraManager | null {
+    return this.cameraManager;
+  }
+
+  get mirror(): boolean {
+    return this.options.mirror ?? true;
   }
 }

@@ -1,4 +1,4 @@
-import { CameraManager, FaceLandmarkManager } from '../dist/visage.esm.js';
+import { FaceLandmarkManager } from '../dist/visage.esm.js';
 import { mat4 } from 'gl-matrix';
 
 const vertexShaderSource = `
@@ -54,10 +54,20 @@ async function init() {
         return;
     }
 
+
     // Camera/Face Setup
-    const cameraManager = new CameraManager();
-    await cameraManager.start();
-    document.body.appendChild(cameraManager.video); // Append but hidden via CSS
+    // Use FaceLandmarkManager to handle camera
+    const faceManager = new FaceLandmarkManager({ maxFaces: 1 });
+    await faceManager.init();
+
+    const cameraManager = faceManager.getCameraManager();
+    if (cameraManager) {
+        cameraManager.video.id = 'lens-video';
+        if (faceManager.mirror) {
+            cameraManager.video.style.transform = 'scaleX(-1)';
+        }
+        document.body.appendChild(cameraManager.video); // Append but hidden via CSS
+    }
 
     // Matrices
     const projectionMatrix = mat4.create();
@@ -68,6 +78,7 @@ async function init() {
     mat4.lookAt(viewMatrix, [0, 0, 2], [0, 0, 0], [0, 1, 0]);
 
     function updateMatrices() {
+        if (!cameraManager) return;
         const fov = 60 * Math.PI / 180;
         // const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
         const aspect = cameraManager.video.videoWidth / cameraManager.video.videoHeight;
@@ -103,10 +114,6 @@ async function init() {
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
     
-
-    const faceManager = new FaceLandmarkManager({ maxFaces: 1 });
-    await faceManager.init(cameraManager);
-
     let verticesData = new Float32Array(0);
 
     faceManager.addEventListener('face-detected', (e) => {
@@ -114,7 +121,7 @@ async function init() {
         document.getElementById('face-count').innerText = faceManager.getFaceCount();
         document.getElementById('vertex-count').innerText = vertices.length;
 
-        if (vertices.length > 0) {
+        if (vertices.length > 0 && cameraManager) {
             // Flatten vertices
             if (verticesData.length !== vertices.length * 3) {
                 verticesData = new Float32Array(vertices.length * 3);

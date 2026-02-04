@@ -62942,15 +62942,25 @@ return a / b;`;
 	        this.cameraManager = null;
 	        this.rafId = null;
 	        this.isRunning = false;
+	        this.ownsCameraManager = false;
 	        // Store latest results
 	        this.faces = [];
 	        this.options = {
 	            maxFaces: options.maxFaces || 1,
-	            refineLandmarks: options.refineLandmarks || false
+	            refineLandmarks: options.refineLandmarks || false,
+	            mirror: options.mirror ?? true
 	        };
 	    }
 	    async init(cameraManager) {
-	        this.cameraManager = cameraManager;
+	        if (cameraManager) {
+	            this.cameraManager = cameraManager;
+	            this.ownsCameraManager = false;
+	        }
+	        else {
+	            this.cameraManager = new CameraManager();
+	            this.ownsCameraManager = true;
+	            await this.cameraManager.start();
+	        }
 	        // Load method
 	        const model = Yt.MediaPipeFaceMesh;
 	        const detectorConfig = {
@@ -62981,6 +62991,11 @@ return a / b;`;
 	    dispose() {
 	        this.stop();
 	        this.model = null;
+	        if (this.ownsCameraManager && this.cameraManager) {
+	            this.cameraManager.stop();
+	            // CameraManager might not have dispose, check its type definition if needed, but stop is standard. 
+	            // If it has dispose, call it. Based on previous file reads, it has stop().
+	        }
 	        this.cameraManager = null;
 	        this.faces = [];
 	    }
@@ -63013,9 +63028,16 @@ return a / b;`;
 	     */
 	    getVertices() {
 	        if (this.faces.length > 0 && this.faces[0].keypoints) {
+	            const width = this.cameraManager?.video.videoWidth || 0;
 	            // keypoints is Array<{x, y, z, name?}>
 	            // We want to return just arrays of [x, y, z] to match "array of vertices positions in 3D"
-	            return this.faces[0].keypoints.map(kp => [kp.x, kp.y, kp.z || 0]);
+	            return this.faces[0].keypoints.map(kp => {
+	                let x = kp.x;
+	                if (this.options.mirror && width > 0) {
+	                    x = width - x;
+	                }
+	                return [x, kp.y, kp.z || 0];
+	            });
 	        }
 	        return [];
 	    }
@@ -63024,6 +63046,15 @@ return a / b;`;
 	     */
 	    getFaceCount() {
 	        return this.faces.length;
+	    }
+	    /**
+	     * Returns the CameraManager instance
+	     */
+	    getCameraManager() {
+	        return this.cameraManager;
+	    }
+	    get mirror() {
+	        return this.options.mirror ?? true;
 	    }
 	}
 
@@ -63334,10 +63365,20 @@ return a / b;`;
 	        return;
 	    }
 
+
 	    // Camera/Face Setup
-	    const cameraManager = new CameraManager();
-	    await cameraManager.start();
-	    document.body.appendChild(cameraManager.video); // Append but hidden via CSS
+	    // Use FaceLandmarkManager to handle camera
+	    const faceManager = new FaceLandmarkManager({ maxFaces: 1 });
+	    await faceManager.init();
+
+	    const cameraManager = faceManager.getCameraManager();
+	    if (cameraManager) {
+	        cameraManager.video.id = 'lens-video';
+	        if (faceManager.mirror) {
+	            cameraManager.video.style.transform = 'scaleX(-1)';
+	        }
+	        document.body.appendChild(cameraManager.video); // Append but hidden via CSS
+	    }
 
 	    // Matrices
 	    const projectionMatrix = create();
@@ -63348,6 +63389,7 @@ return a / b;`;
 	    lookAt(viewMatrix, [0, 0, 2], [0, 0, 0], [0, 1, 0]);
 
 	    function updateMatrices() {
+	        if (!cameraManager) return;
 	        const fov = 60 * Math.PI / 180;
 	        // const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
 	        const aspect = cameraManager.video.videoWidth / cameraManager.video.videoHeight;
@@ -63383,10 +63425,6 @@ return a / b;`;
 	    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
 	    
-
-	    const faceManager = new FaceLandmarkManager({ maxFaces: 1 });
-	    await faceManager.init(cameraManager);
-
 	    let verticesData = new Float32Array(0);
 
 	    faceManager.addEventListener('face-detected', (e) => {
@@ -63394,7 +63432,7 @@ return a / b;`;
 	        document.getElementById('face-count').innerText = faceManager.getFaceCount();
 	        document.getElementById('vertex-count').innerText = vertices.length;
 
-	        if (vertices.length > 0) {
+	        if (vertices.length > 0 && cameraManager) {
 	            // Flatten vertices
 	            if (verticesData.length !== vertices.length * 3) {
 	                verticesData = new Float32Array(vertices.length * 3);
