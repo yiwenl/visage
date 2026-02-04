@@ -6,7 +6,7 @@ A lightweight Face Mesh detection module using TensorFlow.js and MediaPipe, capa
 
 - **Face Detection**: Real-time face detection using MediaPipe Face Mesh.
 - **3D Landmarks**: specialized in providing the array of 3D vertices for the detected face.
-- **Camera Management**: Built-in camera access handling via `camera-manager`.
+- **Camera Management**: Built-in camera access handling via [camera-manager](https://github.com/yiwenl/camera-manager).
 - **Easy Integration**: Modular design with TypeScript support.
 - **Mirroring**: Automatic horizontal mirroring for natural interaction.
 
@@ -52,19 +52,6 @@ faceManager.addEventListener('face-detected', (e) => {
         console.log('First vertex:', vertices[0]);
     }
 });
-```
-
-### Manual Camera Management
-You can still provide your own `CameraManager` instance if preferred:
-
-```typescript
-import { CameraManager, FaceLandmarkManager } from 'visage';
-
-const cameraManager = new CameraManager();
-await cameraManager.start();
-
-const faceManager = new FaceLandmarkManager();
-await faceManager.init(cameraManager);
 ```
 
 ## Build
