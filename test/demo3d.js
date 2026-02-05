@@ -116,7 +116,7 @@ async function init() {
     
     let verticesData = new Float32Array(0);
 
-    faceManager.addEventListener('face-detected', (e) => {
+    faceManager.addEventListener(FaceLandmarkManager.EVENTS.FACE_DETECTED, (e) => {
         const vertices = faceManager.getVertices();
         document.getElementById('face-count').innerText = faceManager.getFaceCount();
         document.getElementById('vertex-count').innerText = vertices.length;

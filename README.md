@@ -41,7 +41,7 @@ if (video) {
 }
 
 // 3. Listen for Results
-faceManager.addEventListener('face-detected', (e) => {
+faceManager.addEventListener(FaceLandmarkManager.EVENTS.FACE_DETECTED, (e) => {
     // Get 3D vertices (x, y, z)
     // If mirror is true, x coordinates are flipped
     const vertices = faceManager.getVertices();
@@ -53,6 +53,15 @@ faceManager.addEventListener('face-detected', (e) => {
     }
 });
 ```
+
+## Events
+
+The `FaceLandmarkManager` emits the following events, accessible via `FaceLandmarkManager.EVENTS`:
+
+| Event Name | Value | Description |
+| :--- | :--- | :--- |
+| `FACE_DETECTED` | `face-detected` | Dispatched when faces are detected. `event.detail.faces` contains the raw results. |
+| `ERROR` | `error` | Dispatched when an error occurs during detection. `event.detail.error` contains the error info. |
 
 ## Build
 

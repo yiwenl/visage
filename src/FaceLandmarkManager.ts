@@ -10,6 +10,11 @@ export interface FaceLandmarkManagerOptions {
 }
 
 export class FaceLandmarkManager extends EventTarget {
+  static readonly EVENTS = {
+    FACE_DETECTED: 'face-detected',
+    ERROR: 'error'
+  } as const;
+
   private model: faceLandmarksDetection.FaceLandmarksDetector | null = null;
   private cameraManager: CameraManager | null = null;
   private rafId: number | null = null;
@@ -97,10 +102,10 @@ export class FaceLandmarkManager extends EventTarget {
             this.faces = faces;
             
             // Dispatch event with results
-            this.dispatchEvent(new CustomEvent('face-detected', { detail: { faces } }));
+            this.dispatchEvent(new CustomEvent(FaceLandmarkManager.EVENTS.FACE_DETECTED, { detail: { faces } }));
         } catch (err) {
             console.error('Face detection error:', err);
-            this.dispatchEvent(new CustomEvent('error', { detail: { error: err } }));
+            this.dispatchEvent(new CustomEvent(FaceLandmarkManager.EVENTS.ERROR, { detail: { error: err } }));
             this.stop(); // Stop on critical error? Maybe not, could be transient. 
             // Let's just log and emit.
         }
