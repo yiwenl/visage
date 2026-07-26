@@ -74,14 +74,14 @@ npm run build
 
 ## Demos
 
-The project includes a 3D WebGL demo to verify functionality.
+The project includes a WebGL landmark overlay demo to verify functionality.
 
-### 3D WebGL Demo
-A 3D visualization using `gl-matrix` and WebGL to render the detected face mesh as a point cloud.
+### WebGL Landmark Overlay Demo
+A camera overlay using WebGL to render the detected face mesh as a point cloud.
 - **Files**: `test/index.html`, `test/demo3d.js`
 - **Features**: 
-  - Real-time 3D rendering.
-  - Semi-transparent camera feed overlay.
+  - Real-time landmark rendering.
+  - Responsive camera feed overlay with matching crop coordinates.
   - Mirrored visualization.
 
 ### Running the Demo
@@ -89,8 +89,6 @@ To run the demo locally:
 
 ```bash
 npm install
-npm install
-npm run build
 npm run dev
 ```
 

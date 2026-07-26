@@ -1,13 +1,12 @@
 import { FaceLandmarkManager } from '../src/index.ts';
-import { mat4 } from 'gl-matrix';
+import { projectCoverPointToClipSpace } from './overlayProjection.js';
 
 const vertexShaderSource = `
     attribute vec3 a_position;
-    uniform mat4 u_matrix;
     uniform float u_pointSize;
 
     void main() {
-        gl_Position = u_matrix * vec4(a_position, 1.0);
+        gl_Position = vec4(a_position, 1.0);
         gl_PointSize = u_pointSize;
     }
 `;
@@ -48,7 +47,7 @@ function createProgram(gl, vertexShader, fragmentShader) {
 
 async function init() {
     const canvas = document.getElementById('gl-canvas');
-    const gl = canvas.getContext('webgl');
+    const gl = canvas.getContext('webgl', { alpha: true, antialias: true });
     if (!gl) {
         console.error("WebGL not supported");
         return;
@@ -66,34 +65,15 @@ async function init() {
         if (faceManager.mirror) {
             video.style.transform = 'scaleX(-1)';
         }
-        document.body.appendChild(video); // Append but hidden via CSS
-    }
-
-    // Matrices
-    const projectionMatrix = mat4.create();
-    const viewMatrix = mat4.create();
-    const viewProjectionMatrix = mat4.create();
-
-    // Camera setup (static)
-    mat4.lookAt(viewMatrix, [0, 0, 2], [0, 0, 0], [0, 1, 0]);
-
-    function updateMatrices() {
-        if (!video) return;
-        const fov = 60 * Math.PI / 180;
-        // const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-        const aspect = video.videoWidth / video.videoHeight;
-        const zNear = 0.1;
-        const zFar = 100.0;
-        mat4.perspective(projectionMatrix, fov, aspect, zNear, zFar);
-        mat4.multiply(viewProjectionMatrix, projectionMatrix, viewMatrix);
+        document.body.appendChild(video);
     }
 
     // Resize canvas
     function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        const pixelRatio = window.devicePixelRatio || 1;
+        canvas.width = Math.round(canvas.clientWidth * pixelRatio);
+        canvas.height = Math.round(canvas.clientHeight * pixelRatio);
         gl.viewport(0, 0, canvas.width, canvas.height);
-        updateMatrices();
     }
     window.addEventListener('resize', resize);
     resize();
@@ -105,7 +85,6 @@ async function init() {
 
     // Locations
     const positionLoc = gl.getAttribLocation(program, 'a_position');
-    const matrixLoc = gl.getUniformLocation(program, 'u_matrix');
     const colorLoc = gl.getUniformLocation(program, 'u_color');
     const pointSizeLoc = gl.getUniformLocation(program, 'u_pointSize');
 
@@ -116,7 +95,7 @@ async function init() {
     
     let verticesData = new Float32Array(0);
 
-    faceManager.addEventListener(FaceLandmarkManager.EVENTS.FACE_DETECTED, (e) => {
+    faceManager.addEventListener(FaceLandmarkManager.EVENTS.FACE_DETECTED, () => {
         const vertices = faceManager.getVertices();
         document.getElementById('face-count').innerText = faceManager.getFaceCount();
         document.getElementById('vertex-count').innerText = vertices.length;
@@ -126,19 +105,24 @@ async function init() {
             if (verticesData.length !== vertices.length * 3) {
                 verticesData = new Float32Array(vertices.length * 3);
             }
-            // Center the face approx. detected coordinates are in pixels (e.g. 0-640, 0-480)
-            // We want to center them around 0.
-            const cx = video.videoWidth / 2;
-            const cy = video.videoHeight / 2;
+            const sourceSize = {
+                width: video.videoWidth,
+                height: video.videoHeight
+            };
+            const targetSize = {
+                width: canvas.clientWidth,
+                height: canvas.clientHeight
+            };
 
             for (let i = 0; i < vertices.length; i++) {
-                // Flip Y because WebGL Y is up, pixel Y is down
-                // Also Z is usually negative for further away efficiently in MediaPipe? 
-                // MediaPipe face mesh Z is scaled such that iris diameter is 1 unit. 
-                // Let's just normalize rough pixel coordinates.
-                verticesData[i * 3] = (vertices[i][0] - cx) / cx; // -1 to 1 approx
-                verticesData[i * 3 + 1] = -(vertices[i][1] - cy) / cx; // maintain aspect ratio relative to width
-                verticesData[i * 3 + 2] = -vertices[i][2] / cx; // Store Z somewhat scaled
+                const projected = projectCoverPointToClipSpace(
+                    { x: vertices[i][0], y: vertices[i][1] },
+                    sourceSize,
+                    targetSize
+                );
+                verticesData[i * 3] = projected.x;
+                verticesData[i * 3 + 1] = projected.y;
+                verticesData[i * 3 + 2] = 0;
             }
         } else {
              verticesData = new Float32Array(0);
@@ -146,7 +130,7 @@ async function init() {
     });
 
     function render() {
-        gl.clearColor(0.1, 0.1, 0.1, 1.0);
+        gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
         if (verticesData.length > 0) {
@@ -157,9 +141,8 @@ async function init() {
             gl.enableVertexAttribArray(positionLoc);
             gl.vertexAttribPointer(positionLoc, 3, gl.FLOAT, false, 0, 0);
 
-            gl.uniformMatrix4fv(matrixLoc, false, viewProjectionMatrix);
             gl.uniform4f(colorLoc, 0.0, 1.0, 0.5, 1.0); // Cyan-ish green
-            gl.uniform1f(pointSizeLoc, 4.0);
+            gl.uniform1f(pointSizeLoc, 4.0 * (window.devicePixelRatio || 1));
 
             gl.drawArrays(gl.POINTS, 0, verticesData.length / 3);
         }
